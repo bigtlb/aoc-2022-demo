@@ -13,7 +13,6 @@ fun main() {
         .sumOf { if ((it.first subtract it.second.toSet()).isNotEmpty() && (it.second subtract it.first.toSet()).isNotEmpty()) 0 else 1 as Int }
 
 
-
     fun part2(input: List<String>): Int = input.parseList()
         .sumOf { if ((it.first intersect it.second.toSet()).isNotEmpty()) 1 else 0 as Int }
 
