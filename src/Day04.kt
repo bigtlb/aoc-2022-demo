@@ -1,20 +1,17 @@
 fun main() {
 
-    fun List<String>.parseList(): List<Pair<IntRange, IntRange>> = this.map {
-        it.split(',').zipWithNext { a, b ->
-            Pair(
-                a.split('-').map(String::toInt).zipWithNext { begin, end -> IntRange(begin, end) }.single(),
-                b.split('-').map(String::toInt).zipWithNext { begin, end -> IntRange(begin, end) }.single()
-            )
-        }.single()
+    fun List<String>.parseList(): List<List<Set<Int>>> = this.map { line ->
+        line.split(',').map { region ->
+                region.split('-').map(String::toInt).let { (begin, end) -> (begin..end).toSet() }
+        }
     }
 
     fun part1(input: List<String>): Int = input.parseList()
-        .sumOf { if ((it.first subtract it.second.toSet()).isNotEmpty() && (it.second subtract it.first.toSet()).isNotEmpty()) 0 else 1 as Int }
+        .count { (first, second) -> (first subtract second).isEmpty() || (second subtract first).isEmpty()}
 
 
     fun part2(input: List<String>): Int = input.parseList()
-        .sumOf { if ((it.first intersect it.second.toSet()).isNotEmpty()) 1 else 0 as Int }
+        .count { (first, second) -> (first intersect second).isNotEmpty()}
 
 
     // test if implementation meets criteria from the description, like:
