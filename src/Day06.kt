@@ -1,9 +1,9 @@
 fun main() {
     fun part1(input: List<String>): Int =
-        input.single().windowedSequence(4, 1, false).indexOfFirst { it.length == it.toSet().size } + 4
+        input.single().windowed(4).indexOfFirst { it.length == it.toSet().size } + 4
 
     fun part2(input: List<String>): Int =
-        input.single().windowedSequence(14, 1, false).indexOfFirst { it.length == it.toSet().size } + 14
+        input.single().windowed(14).indexOfFirst { it.length == it.toSet().size } + 14
 
     // test if implementation meets criteria from the description, like:
     val testInput = readInput("Day06_test")
