@@ -1,35 +1,35 @@
 fun main() {
-    fun isVisible(row: Int, col: Int, height: Int, forest: List<String>): Boolean {
-        if (col == 0 || col == forest[row].lastIndex || row == 0 || row == forest.lastIndex) return true
-        if (forest[row].subSequence(0 until col).map(Char::digitToInt).all { it < height }
-            || (col < forest[row].length - 1 &&
-                    forest[row].subSequence(col + 1..forest[row].lastIndex).map(Char::digitToInt)
-                        .all { it < height }
-                    ) ||
-            (0 until row).toList().map { forest[it][col].digitToInt() }.all { it < height }
-            || (row < forest.size - 1 &&
-                    (row + 1..forest.lastIndex).toList().map { forest[it][col].digitToInt() }
-                        .all { it < height }
-                    )
-        ) return true
+    fun isVisible(row: Int, col: Int, height: Int, forest: List<String>): Boolean = when {
+        // Outter trees are always visible
+        (col == 0 || col == forest[row].lastIndex || row == 0 || row == forest.lastIndex) -> true
 
-        return false
+        // Visible from Left
+        forest[row].subSequence(0 until col).map(Char::digitToInt).all { it < height } -> true
+
+        // Visible from right
+        (col < forest[row].lastIndex &&
+                forest[row].subSequence(col + 1..forest[row].lastIndex).map(Char::digitToInt)
+                    .all { it < height }) -> true
+
+        // Visible from top
+        (0 until row).toList().map { forest[it][col].digitToInt() }.all { it < height } -> true
+
+        // Visible from bottom
+        (row < forest.lastIndex &&
+                (row + 1..forest.lastIndex).toList().map { forest[it][col].digitToInt() }.all { it < height }) -> true
+
+        else -> false
     }
 
     fun List<Int>.canopy(height: Int): List<Int> =
         slice(0..if (indexOfFirst { it >= height } > -1) indexOfFirst { it >= height } else lastIndex)
 
     fun treeScore(row: Int, col: Int, height: Int, forest: List<String>): Int {
-        val left = if (col > 0) forest[row].subSequence(0 until col).reversed().map(Char::digitToInt).canopy(height)
-            .count() else 0
-        val right = if (col < forest[row].length - 1) forest[row].subSequence(col + 1..forest[row].lastIndex)
-            .map(Char::digitToInt).canopy(height).count() else 0
-        val top = if (row > 0) (0 until row).toList().reversed().map { forest[it][col].digitToInt() }.canopy(height)
-            .count() else 0
-        val bottom =
-            if (row < forest.size - 1) (row + 1..forest.lastIndex).toList().map { forest[it][col].digitToInt() }
-                .canopy(height).count() else 0
-        return left * right * top * bottom
+        if (col == 0 || col == forest[row].lastIndex || row == 0 || row == forest.lastIndex) return 0
+        return forest[row].subSequence(0 until col).reversed().map(Char::digitToInt).canopy(height).count() *
+                forest[row].subSequence(col + 1..forest[row].lastIndex).map(Char::digitToInt).canopy(height).count() *
+                (0 until row).toList().reversed().map { forest[it][col].digitToInt() }.canopy(height).count() *
+                (row + 1..forest.lastIndex).toList().map { forest[it][col].digitToInt() }.canopy(height).count()
     }
 
     fun part1(input: List<String>): Int =
