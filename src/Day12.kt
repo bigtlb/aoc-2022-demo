@@ -8,25 +8,23 @@ class Day12Graph(val nodes: MutableMap<Loc, Node> = mutableMapOf()) {
         nodes[node.loc] = node
     }
 
-    fun path(start: Node, end: Node):List<Node> {
+    fun path(start: Node, end: Node): List<Node>? {
         initialize(start)
-        var visiting:Node = start
-        while(visiting != end){
-            visiting.visited = true
+        var visiting: Node? = start
+        while (visiting != end) {
+            visiting!!.visited = true
             priorityQueue.remove(visiting)
-            visiting.adjacentNodes.filterNot { it.visited }.forEach { toNode->
+            visiting.adjacentNodes.filterNot { it.visited }.forEach { toNode ->
                 priorityQueue.add(toNode)
-                val toDistance = visiting.distance+1
-                if (toNode.distance>toDistance){
+                val toDistance = visiting!!.distance + 1
+                if (toNode.distance > toDistance) {
                     toNode.distance = toDistance
-                    toNode.from  = visiting
+                    toNode.from = visiting
                 }
             }
-            val sorted = priorityQueue.sortedBy{it.distance }
-//            println("-------------")
-//            sorted.map{println("${it.loc} ${it.distance} ${it.elevation}")}
-//            println("-------------")
-            visiting = sorted.first()
+            val sorted = priorityQueue.sortedBy { it.distance }
+            visiting = sorted.firstOrNull()
+            if (visiting == null) return null
         }
         return end.path
     }
@@ -40,7 +38,7 @@ class Day12Graph(val nodes: MutableMap<Loc, Node> = mutableMapOf()) {
             if (it.loc != start.loc) {
                 it.distance = Int.MAX_VALUE
             } else {
-                it.distance= 0
+                it.distance = 0
             }
         }
     }
@@ -51,12 +49,11 @@ class Day12Graph(val nodes: MutableMap<Loc, Node> = mutableMapOf()) {
         var visited = false
         var from: Node? = null
 
-        val path:List<Node> get() = from?.let{it.path+this}?:listOf(this)
+        val path: List<Node> get() = from?.let { it.path + this } ?: listOf(this)
     }
 
     companion object {
-        fun load(input: List<String>): Triple<Node, Node, Day12Graph> {
-            val graph = Day12Graph()
+        fun load(input: List<String>): Triple<Node, Node, MutableMap<Loc, Node>> {
             var start: Node? = null
             var end: Node? = null
             val allNodes: MutableMap<Loc, Node> = mutableMapOf()
@@ -68,13 +65,11 @@ class Day12Graph(val nodes: MutableMap<Loc, Node> = mutableMapOf()) {
                         when (elevation) {
                             'S' -> {
                                 start = this
-                                graph.add(this)
                                 elevation = 'a'
                             }
 
                             'E' -> {
                                 end = this
-                                graph.add(this)
                                 elevation = 'z'
                             }
 
@@ -85,11 +80,22 @@ class Day12Graph(val nodes: MutableMap<Loc, Node> = mutableMapOf()) {
                 }
             }
 
+            return Triple(start!!, end!!, allNodes)
+        }
+
+        fun generateGraph(
+            allNodes: MutableMap<Loc, Node>,
+            start: Node,
+            end: Node
+        ): Day12Graph {
+            val graph = Day12Graph()
+            graph.add(start)
+            graph.add(end)
             fun adjacentNodes(node: Node): List<Node> =
                 listOf(Loc(-1, 0), Loc(1, 0), Loc(0, -1), Loc(0, 1)).mapNotNull { move ->
                     val newPos = node.loc + move
                     allNodes[newPos]?.let { newNode ->
-                        if ((0..node.elevation.code+1).contains(allNodes[newPos]!!.elevation.code)) {
+                        if ((0..node.elevation.code + 1).contains(allNodes[newPos]!!.elevation.code)) {
                             if (!graph.nodes.contains(newNode.loc)) {
                                 graph.add(newNode)
                                 newNode.adjacentNodes.addAll(adjacentNodes(newNode))
@@ -99,26 +105,31 @@ class Day12Graph(val nodes: MutableMap<Loc, Node> = mutableMapOf()) {
                     }
                 }
 
-            start!!.adjacentNodes.addAll(adjacentNodes(start!!))
-            return Triple(start!!, end!!, graph)
+            start.adjacentNodes.addAll(adjacentNodes(start))
+            return graph
         }
     }
 }
 
 fun main() {
     fun part1(input: List<String>): Int {
-        val (start, end, graph) = Day12Graph.load(input)
-        val path = graph.path(start, end)
-        return path.count()-1
+        val (start, end, nodes) = Day12Graph.load(input)
+        val path = Day12Graph.generateGraph(nodes, start, end).path(start, end)
+        return path!!.count() - 1
     }
 
-    fun part2(input: List<String>): Int = 0
+    fun part2(input: List<String>): Int {
+        val (_, end, nodes) = Day12Graph.load(input)
+        return nodes.values.filter { it.elevation == 'a' }.mapNotNull { start ->
+            Day12Graph.generateGraph(nodes, start, end).path(start, end)?.let{it.count() - 1}
+        }.min()
+    }
 
 // test if implementation meets criteria from the description, like:
     val testInput = readInput("Day12_test")
     val part1 = part1(testInput)
     check(part1 == 31)
-    check(part2(testInput) == 0)
+    check(part2(testInput) == 29)
     println("checked")
 
     val input = readInput("Day12")
