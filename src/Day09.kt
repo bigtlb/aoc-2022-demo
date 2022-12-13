@@ -1,7 +1,5 @@
 import kotlin.math.abs
 
-typealias Pos = Pair<Int, Int>
-
 fun main() {
     fun distance(head: Pos, tail: Pos): Int = Math.max(abs(head.first - tail.first), abs(head.second - tail.second))
 
