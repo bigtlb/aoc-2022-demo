@@ -22,14 +22,13 @@ class Day12Graph(val nodes: MutableMap<Loc, Node> = mutableMapOf()) {
                     toNode.from = visiting
                 }
             }
-            val sorted = priorityQueue.sortedBy { it.distance }
-            visiting = sorted.firstOrNull()
+            visiting = priorityQueue.sortedBy { it.distance }.firstOrNull()
             if (visiting == null) return null
         }
         return end.path
     }
 
-    val priorityQueue = mutableSetOf<Node>()
+    private val priorityQueue = mutableSetOf<Node>()
     private fun initialize(start: Node) {
         priorityQueue.clear()
         nodes.values.map {
