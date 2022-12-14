@@ -71,12 +71,16 @@ fun main() {
         return result2.sum()
     }
 
-    fun part2(input: List<String>): Int = 0
+    fun part2(input: List<String>): Int {
+        val dividers = listOf(AdventList("[[2]]"), AdventList("[[6]]"))
+        val list = input.filterNot{it.isNullOrBlank()}.map{AdventList(it)}.union(dividers).sorted()
+            return list.mapIndexedNotNull(){idx,node-> if (dividers.contains(node)) idx+1 else null}.fold(1){acc,idx->acc * idx}
+    }
 
     // test if implementation meets criteria from the description, like:
     val testInput = readInput("Day13_test")
     check(part1(testInput) == 13)
-    check(part2(testInput) == 0)
+    check(part2(testInput) == 140)
     println("checked")
 
     val input = readInput("Day13")
