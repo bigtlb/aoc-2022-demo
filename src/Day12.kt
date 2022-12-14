@@ -1,8 +1,3 @@
-typealias Loc = Pair<Int, Int>
-
-operator fun Loc.plus(other: Loc) = Loc(this.first + other.first, this.second + other.second)
-
-
 class Day12Graph(val nodes: MutableMap<Loc, Node> = mutableMapOf()) {
     fun add(node: Node) {
         nodes[node.loc] = node

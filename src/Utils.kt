@@ -16,3 +16,7 @@ fun String.md5() = BigInteger(1, MessageDigest.getInstance("MD5").digest(toByteA
     .padStart(32, '0')
 
 typealias Pos = Pair<Int, Int>
+
+typealias Loc = Pair<Int, Int>
+
+operator fun Loc.plus(other: Loc) = Loc(this.first + other.first, this.second + other.second)
