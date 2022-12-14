@@ -1,7 +1,5 @@
 fun main() {
     class AdventList : Comparable<AdventList> {
-        override fun toString() = list.toString()
-
         fun terms(input: String): List<String> {
             var parenLevel = 0
             var start = 0
@@ -33,10 +31,6 @@ fun main() {
                 })
         }
 
-        constructor(vararg terms: Int) {
-            list.addAll(terms.map { Pair(it, null) })
-        }
-
         var list = mutableListOf<Pair<Int?, AdventList?>>()
 
         fun Pair<Int?, AdventList?>.compareTo(other: Pair<Int?, AdventList?>) = when {
@@ -61,23 +55,18 @@ fun main() {
 
     }
 
-    fun part1(input: List<String>): Int {
-        val result = input.chunked(3).map { (first, second) ->
-            val check = AdventList(first).compareTo(AdventList(second)) <= 0
-            check
-        }
-        val result2 = result.mapIndexed { idx, cur -> if (cur) idx + 1 else 0 }
-
-        return result2.sum()
-    }
+    fun part1(input: List<String>): Int = input.chunked(3).map { (first, second) ->
+        AdventList(first).compareTo(AdventList(second)) <= 0
+    }.mapIndexed { idx, cur -> if (cur) idx + 1 else 0 }.sum()
 
     fun part2(input: List<String>): Int {
         val dividers = listOf(AdventList("[[2]]"), AdventList("[[6]]"))
-        val list = input.filterNot{it.isNullOrBlank()}.map{AdventList(it)}.union(dividers).sorted()
-            return list.mapIndexedNotNull(){idx,node-> if (dividers.contains(node)) idx+1 else null}.fold(1){acc,idx->acc * idx}
+        return input.filterNot { it.isNullOrBlank() }.map { AdventList(it) }.union(dividers).sorted()
+            .mapIndexedNotNull { idx, node -> if (dividers.contains(node)) idx + 1 else null }
+            .fold(1) { acc, idx -> acc * idx }
     }
 
-    // test if implementation meets criteria from the description, like:
+// test if implementation meets criteria from the description, like:
     val testInput = readInput("Day13_test")
     check(part1(testInput) == 13)
     check(part2(testInput) == 140)
