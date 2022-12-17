@@ -20,7 +20,7 @@ fun main() {
             bounds = Pair(rocks.minOf { it.first }, rocks.maxOf { it.first })
             bottom = rocks.maxOf{it.second}
             if (withFloor){
-                rocks += (bounds.first-1000..bounds.second+1000).map{Loc(it,bottom+2)}
+                //rocks += (bounds.first-1000..bounds.second+1000).map{Loc(it,bottom+2)}
                 bottom += 2
             }
         }
@@ -30,6 +30,7 @@ fun main() {
             do {
                 spot = dropGrain(source)
             } while (spot != null)
+            printChart()
             return sand
         }
 
@@ -61,7 +62,7 @@ fun main() {
                     false
                 } else {
                     var test = listOf(lastPlace!! + Loc(0, 1), lastPlace!! + Loc(-1, 1), lastPlace!! + Loc(1, 1))
-                        .firstOrNull { !(testChart.contains(it)) }
+                        .firstOrNull { (!withFloor || it.second < bottom) && !(testChart.contains(it)) }
                     if (test == null) {
                         false
                     } else {
@@ -87,8 +88,7 @@ fun main() {
 // test if implementation meets criteria from the description, like:
     val testInput = readInput("Day14_test")
     check(part1(testInput) == 24)
-    val part2 = part2(testInput)
-    check(part2 == 93)
+    check(part2(testInput) == 93)
     println("checked")
 
     val input = readInput("Day14")
