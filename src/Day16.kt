@@ -25,9 +25,9 @@ data class Day16Valve(val name: String, val rate: Int, val connections: List<Str
         val parseRegex =
             """Valve (?<name>[A-Z]+) has flow rate=(?<rate>[0-9]+); tunnels* leads* to valves* (?<connections>.+)""".toRegex()
 
-        fun loadValves(input: List<String>): List<Day16Valve> = input.mapNotNull {
-            parseRegex.matchEntire(it)?.let { it ->
-                val groups = it.groups as MatchNamedGroupCollection
+        fun loadValves(input: List<String>): List<Day16Valve> = input.mapNotNull { line->
+            parseRegex.matchEntire(line)?.let { r ->
+                val groups = r.groups as MatchNamedGroupCollection
                 Day16Valve(
                     groups["name"]!!.value,
                     groups["rate"]!!.value.toInt(),
@@ -51,13 +51,19 @@ fun main() {
     fun Day16Valve.remaining(opened: Set<String>, timeLeft: Int) =
         distanceMap.filter { (key, timeNeeded) -> key !in opened && timeNeeded + 1 <= timeLeft }
 
-    fun List<Day16Valve>.highestPath(opened: Set<String>, node: String, minutesLeft: Int, sum: Int, open: Int): Int {
+    fun List<Day16Valve>.highestPath(
+        opened: Set<String>,
+        node: String,
+        minutesLeft: Int,
+        sum: Int,
+        open: Int
+    ): Pair<Int, List<String>> {
         val curNode = this.first { it.name == node }
         return when {
-            minutesLeft < 0 -> 0
-            minutesLeft == 0 -> sum
-            minutesLeft == 1 -> sum + open
-            curNode.distanceMap.all { (key, _) -> key in opened } -> sum + minutesLeft * open
+            minutesLeft < 0 -> Pair(0, emptyList())
+            minutesLeft == 0 -> Pair(sum, emptyList())
+            minutesLeft == 1 -> Pair(sum + open, emptyList())
+            curNode.distanceMap.all { (key, _) -> key in opened } -> Pair(sum + minutesLeft * open, emptyList())
             else -> curNode.remaining(opened, minutesLeft)
                 .map { (nNode, distance) ->
                     highestPath(
@@ -66,16 +72,23 @@ fun main() {
                         minutesLeft - (distance + 1),
                         sum + (distance + 1) * open,
                         open + this.first { it.name == nNode }.rate
-                    )
-                }.plus(sum + minutesLeft * open)
-                .max()
+                    ).let{
+                        Pair(it.first,listOf(nNode)+it.second)
+                    }
+                }.plus(
+                    Pair(sum + minutesLeft * open, emptyList())
+                )
+                .maxBy{it.first}
         }
     }
 
     fun part1(input: List<String>): Int =
         Day16Valve.loadValves(input)
             .computeAllDistances()
-            .highestPath(emptySet(), "AA", 30, 0, 0)
+            .highestPath(emptySet(), "AA", 30, 0, 0).let{
+                println(it.second)
+                it.first
+            }
 
     fun part2(input: List<String>): Int = 0
 
