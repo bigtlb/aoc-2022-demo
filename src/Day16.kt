@@ -1,126 +1,81 @@
 data class Day16Valve(val name: String, val rate: Int, val connections: List<String>) {
     val distanceMap = mutableMapOf<String, Int>()
 
+
+    fun computeDistances(nodes: List<Day16Valve>) = apply {
+        distanceMap[name] = 0
+        ArrayDeque<Day16Valve>().let { queue ->
+            queue.add(this)
+            val visited = mutableSetOf<String>()
+            while (queue.isNotEmpty()) {
+                val current = queue.removeFirst()
+                val distance = current.distanceMap[name]!!
+                visited.add(current.name)
+                current.connections.filter { it !in visited }.forEach { n ->
+                    val neighbor = nodes.first { it.name == n }
+                    neighbor.distanceMap[name] = distance + 1
+                    queue.addLast(neighbor)
+                }
+            }
+        }
+        distanceMap.remove(name)
+    }
+
     companion object {
         val parseRegex =
             """Valve (?<name>[A-Z]+) has flow rate=(?<rate>[0-9]+); tunnels* leads* to valves* (?<connections>.+)""".toRegex()
 
-        fun loadValves(input: List<String>): Map<String, Day16Valve> = input.mapNotNull {
+        fun loadValves(input: List<String>): List<Day16Valve> = input.mapNotNull {
             parseRegex.matchEntire(it)?.let { it ->
                 val groups = it.groups as MatchNamedGroupCollection
-                Pair(
+                Day16Valve(
                     groups["name"]!!.value,
-                    Day16Valve(
-                        groups["name"]!!.value,
-                        groups["rate"]!!.value.toInt(),
-                        groups["connections"]!!.value.split(",").map { it.trim() })
-                )
+                    groups["rate"]!!.value.toInt(),
+                    groups["connections"]!!.value.split(",").map { it.trim() })
             }
-        }.associate { it }
+        }
     }
 
 }
 
 fun main() {
-    fun Map<String, Day16Valve>.score(start: String, order: List<String>, minutes: Int): Int {
-        var cur = start
-        var left = minutes
-        var remaining = ArrayDeque(order)
-        var total = 0
-        var currentRate = 0
 
-        while (left > 0) {
-            if (remaining.count() > 0) {
-                val next = remaining.removeFirst()
-                val moves = this[cur]!!.pathTo[next]
-                var turns = moves!!.count().coerceAtMost(left)
-                total += turns * currentRate
-                if (turns < left) {
-                    turns++
-                    total += currentRate
-                    currentRate += this[next]!!.rate
-                }
-                left -= turns
-                cur = next
-            } else {
-                total += left * currentRate
-                left = 0
+    fun List<Day16Valve>.computeAllDistances(): List<Day16Valve> {
+        filter { it.rate > 0 }
+            .forEach { rated ->
+                rated.computeDistances(this)
             }
-        }
-        return total
+        return this
     }
 
-    fun permutations(input: List<String>, idx: Int = input.lastIndex): List<List<String>> {
-        if (idx == 1) return listOf(input)
+    fun Day16Valve.remaining(opened: Set<String>, timeLeft: Int) =
+        distanceMap.filter { (key, timeNeeded) -> key !in opened && timeNeeded + 1 <= timeLeft }
 
-        var tmp = input.toMutableList()
-        var result = mutableListOf<List<String>>()
-
-        for (i in (0 until idx)) {
-            result.addAll(permutations(tmp, idx - 1))
-            val pos = if (idx % 2 == 0) i else 0
-            val tchar = tmp[pos]
-            tmp[pos] = tmp[idx]
-            tmp[idx] = tchar
-            result.add(tmp.toList())
+    fun List<Day16Valve>.highestPath(opened: Set<String>, node: String, minutesLeft: Int, sum: Int, open: Int): Int {
+        val curNode = this.first { it.name == node }
+        return when {
+            minutesLeft < 0 -> 0
+            minutesLeft == 0 -> sum
+            minutesLeft == 1 -> sum + open
+            curNode.distanceMap.all { (key, _) -> key in opened } -> sum + minutesLeft * open
+            else -> curNode.remaining(opened, minutesLeft)
+                .map { (nNode, distance) ->
+                    highestPath(
+                        opened + node,
+                        nNode,
+                        minutesLeft - (distance + 1),
+                        sum + (distance + 1) * open,
+                        open + this.first { it.name == nNode }.rate
+                    )
+                }.plus(sum + minutesLeft * open)
+                .max()
         }
-        return result
     }
 
-    fun Map<String, Day16Valve>.highestPath(opened:Set<String>, node: String, minutes: Int, sum:Int, open:Int): Int
-    Pair<Int, List<String>> {
-        map {
-            val visited = mutableListOf(it.key)
-            val valve = it.value
-            valve.pathTo.clear()
-            valve.pathTo.putAll(valve.connections.map { to -> Pair(to, listOf(to)) }.toMap())
-            visited.addAll(it.value.connections)
-            while (visited.size < this.keys.size) {
-                valve.pathTo.putAll(valve.pathTo.flatMap { pathEntry ->
-                    this[pathEntry.key]!!.connections.filter { to ->
-                        !visited.contains(to)
-                    }.mapNotNull { to ->
-                        visited.add(to)
-                        Pair(to, pathEntry.value + to)
-                    }
-                }.toMap())
-            }
-        }
-
-
-        println("Valves: ${values.filter { it.rate > 0 }.count()}")
-        val valves = values.filter { it.rate > 0 }.sortedWith(compareByDescending { it.rate }).map{it.name}.toMutableList()
-        var best = Pair(this.score(start,valves,minutes), valves.toList())
-        println("Best: $best")
-        var n = valves.lastIndex
-        val stack = (0..n).map{0}.toMutableList()
-        var i = 0
-        while (i < n) {
-            if (stack[i] < i) {
-                val from = if (i % 2 == 0) 0 else stack[0]
-                val tmp = valves[from]
-                valves[from] = valves[i]
-                valves[i] = tmp
-                val score = this.score(start, valves, minutes)
-                if (score > best.first){
-                    best = Pair(score, valves.toList())
-                    println("Best: $best")
-                }
-                stack[i]++
-                i = 0
-            } else {
-                stack[i] = 0
-                i++
-            }
-        }
-        println("Result: ${best.first} ${best.second}")
-        return best
-    }
-
-    fun part1(input: List<String>): Int {
-        val result = Day16Valve.loadValves(input).highestPath("AA", 30)
-        return result.first
-    }
+    fun part1(input: List<String>): Int =
+        Day16Valve.loadValves(input)
+            .computeAllDistances()
+            .highestPath(emptySet(), "AA", 30, 0, 0)
 
     fun part2(input: List<String>): Int = 0
 
